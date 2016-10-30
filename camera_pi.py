@@ -3,7 +3,6 @@ import io
 import threading
 import picamera
 
-
 class Camera(object):
     thread = None  # background thread that reads frames from camera
     frame = None  # current frame is stored here by background thread
@@ -28,7 +27,7 @@ class Camera(object):
     def _thread(cls):
         with picamera.PiCamera() as camera:
             # camera setup
-            camera.resolution = (320, 240)
+            camera.resolution = (1280, 960)
             camera.hflip = True
             camera.vflip = True
 
@@ -52,3 +51,7 @@ class Camera(object):
                 if time.time() - cls.last_access > 10:
                     break
         cls.thread = None
+
+    def snapshot(self, fname):
+        stream = self.get_frame()
+        open(fname, 'wb').write(stream)

@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-from flask import Flask, render_template, Response
+from flask import Flask, render_template, Response, send_file
 
 # emulated camera
-from camera import Camera
+from camera_pi import Camera
 
 # Raspberry Pi camera module (requires picamera package)
 # from camera_pi import Camera
@@ -30,6 +30,12 @@ def video_feed():
     return Response(gen(Camera()),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
+@app.route('/snapshot')
+def snapshot():
+    fname = 'photos/test.jpg'
+    Camera().snapshot(fname)
+    return send_file(fname, mimetype="image/jpeg")
+    
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True, threaded=True)
