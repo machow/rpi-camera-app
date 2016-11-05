@@ -2,30 +2,33 @@ import time
 import io
 import threading
 import picamera
+from .camera import Camera as MockCamera
 
-class Camera(object):
-    thread = None  # background thread that reads frames from camera
-    frame = None  # current frame is stored here by background thread
-    last_access = 0  # time of last client access to the camera
+
+class Camera(MockCamera):
+
+    def __init__(self):
+        self.thread = None  # background thread that reads frames from camera
+        self.frame = None  # current frame is stored here by background thread
+        self.last_access = 0  # time of last client access to the camera
 
     def initialize(self):
-        if Camera.thread is None:
+        if self.thread is None:
             # start background frame thread
-            Camera.thread = threading.Thread(target=self._thread)
-            Camera.thread.start()
+            self.thread = threading.Thread(target=self._thread)
+            self.thread.start()
 
             # wait until frames start to be available
             while self.frame is None:
                 time.sleep(0)
 
     def get_frame(self):
-        Camera.last_access = time.time()
+        self.last_access = time.time()
         self.initialize()
         return self.frame
 
-    @classmethod
-    def _thread(cls):
-        with picamera.PiCamera() as camera:
+    def _thread(self):
+        with self.camera as camera:
             # camera setup
             camera.resolution = (1280, 960)
             camera.hflip = True
@@ -40,7 +43,7 @@ class Camera(object):
                                                  use_video_port=True):
                 # store frame
                 stream.seek(0)
-                cls.frame = stream.read()
+                self.frame = stream.read()
 
                 # reset stream for next frame
                 stream.seek(0)
@@ -48,10 +51,10 @@ class Camera(object):
 
                 # if there hasn't been any clients asking for frames in
                 # the last 10 seconds stop the thread
-                if time.time() - cls.last_access > 10:
+                if time.time() - self.last_access > 10:
                     break
-        cls.thread = None
+        self.thread = None
 
-    def snapshot(self, fname):
-        stream = self.get_frame()
-        open(fname, 'wb').write(stream)
+    @property
+    def camera(self):
+        return picamera.PiCamera()
